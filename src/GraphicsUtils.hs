@@ -1,4 +1,4 @@
-module GraphicsUtils (coloredDrawing) where
+module GraphicsUtils (drawing) where
 import Graphics.Gloss
 import Graphics.Gloss.Data.Vector
 import Graphics.Gloss.Interface.Environment
@@ -6,30 +6,16 @@ import Data.List
 import Data.Word
 import Data.ByteString (ByteString, pack)
 
-colors = map (dark) [red,green,rose, yellow, chartreuse]--, rose,  chartreuse, aquamarine, azure, violet]
-coloredDrawing width height = drawing width  height (length colors)
+colors = map (dark) $  cycle [red,green,rose, yellow, chartreuse, rose,  chartreuse, aquamarine, azure, violet]
 
 drawing :: Int -> Int -> Int -> Picture
-drawing width height n  = color rose $ scale scaleX scaleY $ separateScreen $ ActorsPositionsOnScreen radiusV n --radiusV n
+drawing width height n  =  scale scaleX scaleY $ separateScreen $ ActorsPositionsOnScreen radiusV n --radiusV n
        where 
               area = fromIntegral $ width * height :: Float
               radiusV = ( area / (2*pi*(fromIntegral n+1)) ) ** (1/2)  :: Float
               scaleX = (fromIntegral width / fromIntegral height) ** (1/2)
               scaleY = 1/scaleX
               
-data ActorsPositionsOnScreen = ActorsPositionsOnScreen {radius :: Float, parts_quantity :: Int} deriving (Eq, Show)
-distanceToLittleCircle :: ActorsPositionsOnScreen -> Float
-distanceToLittleCircle actsPosOnScreen =  radius' / (1 - sin (realToFrac radians/2 ))
-       where
-              radius' = radius actsPosOnScreen
-              radians = 2*(pi::Double) /  fromIntegral (parts_quantity actsPosOnScreen)
-arcThickness :: ActorsPositionsOnScreen -> Float
-arcThickness actsPosOnScreen  =2* ( arcRadius - l * cos (realToFrac radians/2))
-       where 
-              l = distanceToLittleCircle actsPosOnScreen
-              radians = 2*(pi::Double) /  fromIntegral (parts_quantity actsPosOnScreen)
-arcRadius ::  Float
-arcRadius = 10000
 
 
 
@@ -57,9 +43,26 @@ drawSectors actsPosOnScreen = coloredSectors
               littleCircle = circleSolid (l * sin (realToFrac radians/2))
               littleCircles = zipWith (\(x,y) -> translate x y) (map ithCircleCenter [0..n-1]) (replicate n littleCircle)
               l =  distanceToLittleCircle actsPosOnScreen--radius' / (1 - sin (realToFrac radians/2 )) :: Float
-              degrees = 360/fromIntegral n
+              degrees = 360 /fromIntegral n
               thickArcs = map ithThickArc [0..n-1]
-              ithThickArc i = rotate (degrees * fromIntegral (negate i) ) thArc
+              --ithThickArc i = rotate ( degrees * fromIntegral (i+1) ) thArc
               ithCircleCenter i = mulSV l $ ithCosSinForCircles i
-              ithCosSinForCircles i = (realToFrac $ cos $ radians *(1/2+ fromIntegral i) ,realToFrac $ sin $ radians *(1/2+ fromIntegral i) ) 
-              thArc = thickArc 0 degrees arcRadius (arcThickness actsPosOnScreen)
+              ithCosSinForCircles i = (realToFrac $ cos $  radians *(1/2+ fromIntegral i) ,realToFrac $ sin $  radians *(1/2+ fromIntegral i) ) 
+              --thArc = thickArc 0 degrees arcRadius (arcThickness actsPosOnScreen)
+              ithThickArc i = thickArc (degrees * i') (degrees*(i'+1)) arcRadius (arcThickness actsPosOnScreen)
+                     where 
+                            i' = fromIntegral i
+
+data ActorsPositionsOnScreen = ActorsPositionsOnScreen {radius :: Float, parts_quantity :: Int} deriving (Eq, Show)
+distanceToLittleCircle :: ActorsPositionsOnScreen -> Float
+distanceToLittleCircle actsPosOnScreen =  radius' / (1 - sin (realToFrac radians/2 ))
+       where
+              radius' = radius actsPosOnScreen
+              radians = 2*(pi::Double) /  fromIntegral (parts_quantity actsPosOnScreen)
+arcThickness :: ActorsPositionsOnScreen -> Float
+arcThickness actsPosOnScreen  =2* ( arcRadius - l * cos (realToFrac radians/2))
+       where 
+              l = distanceToLittleCircle actsPosOnScreen
+              radians = 2*(pi::Double) /  fromIntegral (parts_quantity actsPosOnScreen)
+arcRadius ::  Float
+arcRadius = 10000
