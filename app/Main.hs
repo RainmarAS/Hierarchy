@@ -5,7 +5,7 @@ import GraphicsUtils
 import Data.ByteString (ByteString, pack)
 
 
-paths = ["images\\"++show i ++".bmp" | i <-  [1..9]]
+paths = ["D:\\Hierarcy\\images\\"++show i ++".bmp" | i <-  [1..9]]
 imgsTrans imgs = [translate (i*300) 0 img | (img,i) <- zip imgs [1..9]] :: [Picture]
 
 
