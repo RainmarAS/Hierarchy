@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       GraphicsUtils
+      Subject
   other-modules:
       Paths_newFolder
   hs-source-dirs:
