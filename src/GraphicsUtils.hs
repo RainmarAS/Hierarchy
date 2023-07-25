@@ -6,8 +6,6 @@ import Data.List
 import Data.Word
 import Data.ByteString (ByteString, pack)
 
-border_angle  = 1/2 :: Float
-arcRadius = 10000 :: Float
 
 data World = World {width :: Int, height :: Int, segments_quantity :: Int} deriving (Eq, Show)
 colors = map (dark) $  cycle [greyN 0.3]--,red,green,rose, yellow,chartreuse, rose,  chartreuse, aquamarine, azure, violet]
@@ -21,15 +19,15 @@ drawWorld  world@(World width height n) = separateScreen world -- scale scaleX s
 
 
 
-separateScreen world = rotate (90) $ pics
+separateScreen actsPosOnScreen = rotate (90) $ pics
        where 
               n = segments_quantity world
               pics =  pictures $ circles -- ++ lines    -- ----> not needed yet
               --lines =  map (\i -> color white $ line [(0,0),mulSV 1000 $ ithCosSin i]) [0..n-1]
               circles =    coloredSectors ++ [centerCircle] 
-              coloredSectors  = drawSectors world
+              coloredSectors  = drawSectors actsPosOnScreen
               degrees = 360/fromIntegral n
-              centerCircle =  color (greyN 0.2) $ circleSolid (radius world)
+              centerCircle = circleSolid (radius' )
               radians = 2*(pi::Double) /  fromIntegral n
               ithCosSin i = (realToFrac $ cos $ radians * fromIntegral i,realToFrac $ sin $ radians * fromIntegral i) 
 
@@ -39,7 +37,7 @@ drawSectors world =    coloredSectors
               n = segments_quantity world
               --lines =  map (\i -> color white $ line [(0,0),mulSV 1000 $ ithCosSinForCircles i]) [0..n-1]
               coloredSectors  =   zipWith (color) colors sectors
-              sectors = zipWith (<>) thickArcs littleCircles
+              sectors = zipWith (<>) littleCircles thickArcs
               radians = 2*(pi::Double) /  fromIntegral n
               segment_icon = color red $ circleSolid $ (min 0.9 $ (fromIntegral n)/10)*(l * sin (realToFrac radians/2) )
               littleCircle_ = circleSolid $ (degrees - border_angle)/degrees*(l * sin (realToFrac radians/2) )
