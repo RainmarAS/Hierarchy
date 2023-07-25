@@ -17,14 +17,13 @@ updateWorld (EventKey (MouseButton WheelDown) Down _ _) world = world{segments_q
 updateWorld (EventKey (MouseButton LeftButton) Down _ (x,y)) world = if x**2+y**2 < 1000 then world{segments_quantity = 3} else world
 updateWorld _ world = world
 
---colors = map (dark)  [red,green,rose, yellow, chartreuse, rose,  chartreuse, aquamarine, azure, violet]
 bitmapData = pack $ take 40000 (cycle [200,10,10,55])
 main :: IO ()
 main = do 
         imgs <- mapM loadBMP paths
         (width, height) <- getScreenSize
         putStrLn $ "width: " ++ (show width) ++ " height: " ++ (show height)
-        play FullScreen (greyN 0.3) 60 (World width height 50) drawing updateWorld (\_ -> id)
+        play FullScreen (greyN 0.3) 60 (World width height 10) drawWorld updateWorld (\_ -> id)
         --display FullScreen (dark blue) ( coloredDrawing width height  ) 
         --display FullScreen (white) (bitmapOfByteString 100 100 (BitmapFormat TopToBottom PxRGBA) bitmapData True)
         --display FullScreen (white) (pictures $ imgsTrans imgs)
