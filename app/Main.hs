@@ -30,7 +30,7 @@ updateScreenState _ screen_state = screen_state
 
 
 mainCharacter = Subject "Main Character"
-initSubjects = take 7 $ cycle $ map (\s -> Subject [s]) ['a','b'..'z'] :: [Subject]
+initSubjects = take 26 $ cycle $ map (\s -> Subject [s]) ['a','b'..'z'] :: [Subject]
 --colors = map (dark)  [red,green,rose, yellow, chartreuse, rose,  chartreuse, aquamarine, azure, violet]
 bitmapData = pack $ take 40000 (cycle [200,10,10,55])
 main :: IO ()

@@ -23,10 +23,10 @@ import Data.ByteString (ByteString, pack)
 data ClickableObject = SubjectButton { subject :: Subject}
 
 clickedObject :: Float -> Float -> ScreenState -> Maybe ClickableObject
-clickedObject x_ y_ screen_state= if index > -1 then Just (SubjectButton ((subjects screen_state) !! ((index +1) `mod` 7) )) else Nothing
+clickedObject x_ y_ screen_state= if index > -1 then Just (SubjectButton ((subjects screen_state) !! ((index +1) `mod` segments_quantity screen_state) )) else Nothing
        where
               (dx,dy) = focusPoint screen_state
-              (x,y) = (x_+dx,y_+dy)
+              (x,y) = ( scaleY screen_state * x_+dx,scaleX screen_state * y_+dy)
               index = if x**2+y**2 < (radius screen_state) ** 2 then -1 else fromMaybe (-1)
                                 (findIndex (\(xc,yc) -> (x-xc)**2 + (y-yc)**2 <= (littleCircleRadius screen_state)**2) 
                                 [ polar2decart (distanceToLittleCircle screen_state, -pi/2 +(1/2 + fromIntegral i ) * ( segmentInRadians screen_state) )  
@@ -38,21 +38,25 @@ arcRadius = 10000 :: Float
 
 data ScreenState = ScreenState {width :: Int, height :: Int,  main_character :: Subject , subjects :: [Subject], subjectInCenter :: Subject} deriving (Eq, Show)
 
+scaleX :: ScreenState -> Float
+scaleX screen_state = (fromIntegral (width screen_state) / fromIntegral (height screen_state)) ** (1/2)
+scaleY screen_state = (fromIntegral (height screen_state) / fromIntegral (width screen_state) ) ** (1/2)
+
 colors = map (dark) $  cycle [greyN 0.3]--,red,green,rose, yellow,chartreuse, rose,  chartreuse, aquamarine, azure, violet]
 
 drawScreen :: ScreenState-> Picture
-drawScreen  screen_state@(ScreenState width height  _ _ subj_in_center) = translate (-1*x) (-1*y)$ separateScreen screen_state -- scale scaleX scaleY $
+drawScreen  screen_state@(ScreenState width height  _ _ subj_in_center) = scale (scaleX screen_state) (scaleY screen_state) $ translate (-1*x) (-1*y)$ separateScreen screen_state -- 
        where 
               (x,y) = focusPoint screen_state
               n = segments_quantity screen_state
               area = fromIntegral $ width * height :: Float
               radiusV = ( area / (2*pi*(fromIntegral n+1)) ) ** (1/2)  :: Float
-              scaleX = (fromIntegral width / fromIntegral height) ** (1/2)
-              scaleY = 1/scaleX
               
-focusPoint screen_state = if subj_in_center_idx < 0 then (0,0) else polar2decart (distanceToLittleCircle screen_state,-pi/2 + (segmentInRadians screen_state) *(1/2+ fromIntegral subj_in_center_idx))
-       where subj_in_center_idx = fromMaybe (-1) (findIndex (==subj_in_center) $ subjects screen_state)
-             subj_in_center = subjectInCenter screen_state
+focusPoint screen_state = if subj_in_center_idx < 0 then (0,0) else  (x,y) --(x * scaleY screen_state,y * scaleX screen_state)
+       where 
+              (x,y) = polar2decart (2*distanceToLittleCircle screen_state,-pi/2 + (segmentInRadians screen_state) *(1/2+ fromIntegral subj_in_center_idx))
+              subj_in_center_idx = fromMaybe (-1) (findIndex (==subj_in_center) $ subjects screen_state)
+              subj_in_center = subjectInCenter screen_state
 
 
 separateScreen screen_state = rotate (90) $ pics
