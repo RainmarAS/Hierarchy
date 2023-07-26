@@ -23,13 +23,13 @@ import Data.ByteString (ByteString, pack)
 data ClickableObject = SubjectButton { subject :: Subject}
 
 clickedObject :: Float -> Float -> ScreenState -> Maybe ClickableObject
-clickedObject x_ y_ screen_state= if index > -1 then Just (SubjectButton ((subjects screen_state) !! ((index +2) `mod` 7) )) else Nothing
+clickedObject x_ y_ screen_state= if index > -1 then Just (SubjectButton ((subjects screen_state) !! ((index +1) `mod` 7) )) else Nothing
        where
               (dx,dy) = focusPoint screen_state
               (x,y) = (x_+dx,y_+dy)
-              index = if x**2+y**2 < (radius screen_state) ** 2 then 0 else fromMaybe (-1)
-                                (findIndex (\(xc,yc) -> (x-xc)**2 + (y-yc)**2 < (littleCircleRadius screen_state)**2) 
-                                [ polar2decart (distanceToLittleCircle screen_state,fromIntegral i * segmentInRadians screen_state)  
+              index = if x**2+y**2 < (radius screen_state) ** 2 then -1 else fromMaybe (-1)
+                                (findIndex (\(xc,yc) -> (x-xc)**2 + (y-yc)**2 <= (littleCircleRadius screen_state)**2) 
+                                [ polar2decart (distanceToLittleCircle screen_state, -pi/2 +(1/2 + fromIntegral i ) * ( segmentInRadians screen_state) )  
                                 | i <- [1..segments_quantity screen_state]]  )
 
 border_angle  = 1/2 :: Float
