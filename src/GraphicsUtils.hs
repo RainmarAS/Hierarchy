@@ -13,6 +13,8 @@ import Graphics.Gloss.Data.Vector
 import Graphics.Gloss.Interface.Environment
 import Data.List
 import Data.Word
+import Data.Maybe
+import Data.List
 import Subject
 import Data.ByteString (ByteString, pack)
 
@@ -20,13 +22,16 @@ border_angle  = 1/2 :: Float
 arcRadius = 10000 :: Float
 
 
-data World = World {width :: Int, height :: Int,  main_character :: Subject , subjects :: [Subject]} deriving (Eq, Show)
+data World = World {width :: Int, height :: Int,  main_character :: Subject , subjects :: [Subject], subjectInCenter :: Subject} deriving (Eq, Show)
 
 colors = map (dark) $  cycle [greyN 0.3]--,red,green,rose, yellow,chartreuse, rose,  chartreuse, aquamarine, azure, violet]
 
 drawWorld :: World-> Picture
-drawWorld  world@(World width height  _ _)  =  separateScreen world -- scale scaleX scaleY $
+drawWorld  world@(World width height  _ _ subj_in_center) = scale 2 2 $ scale scaleX scaleY $ translate (-2*x) (-2*y)$ separateScreen world -- scale scaleX scaleY $
        where 
+              subj_in_center_idx = fromMaybe 0 (findIndex (==subj_in_center) $ subjects world)
+              --subj_in_center_idx = 
+              (x,y) = polar2decart (distanceToLittleCircle world,-pi/2 + (segmentInRadians world) *(1/2+ fromIntegral subj_in_center_idx))
               n = segments_quantity world
               area = fromIntegral $ width * height :: Float
               radiusV = ( area / (2*pi*(fromIntegral n+1)) ) ** (1/2)  :: Float
@@ -50,25 +55,25 @@ separateScreen world = rotate (90) $ pics
               --ithCosSin i = polar2decart (1,i*radians) --(realToFrac $ cos $ radians * fromIntegral i,realToFrac $ sin $ radians * fromIntegral i) 
 
 
-drawSectors world = coloredSectors ++ lines -- ++ squares
+drawSectors world =  coloredSectors ++ lines ++ squares
        where  
               n = segments_quantity world
-              lines = let fstpoint i =  polar2decart (l,realToFrac $ radians *(1/2+ fromIntegral i))
+              lines = let fstpoint i =  polar2decart (l + littleCircleRadius world,realToFrac $ radians *(1/2+ fromIntegral i))
                       in [color white $ line [fstpoint i,mulSV 1000 $ fstpoint i] | i<- [0..n-1]]
               squares = concat [[  let (x,y) = polar2decart (l*j,realToFrac $ radians *(1/2+ fromIntegral i))
-                                       trans = (color orange) . (translate x y) . rotate(-90) . (scale 0.3 0.3) . Text . name . main_character  --  rectangleSolid (40*j) (55*j)
-                                   in  trans world 
+                                       trans = (color orange) . (translate x y) . rotate(-90) . (scale 0.3 0.3) . Text $ "Info"  -- 
+                                   in  trans
                                    | i <- [0..n-1] ]
-                                   | j<-[1.5,2..5] ]
+                                   | j<-[1.5,2..10] ]
               coloredSectors  =   zipWith (color) colors sectors
               sectors = zipWith (<>) thickArcs littleCircles
-              radians = 2*(pi::Double) /  fromIntegral n
+              radians = segmentInRadians world -- 2*(pi::Double) /  fromIntegral n
               semgent_icon = color red $ circleSolid $ (min 0.9 $ (fromIntegral n)/10)*(littleCircleRadius world)
               littleCircle_ = circleSolid $ (littleCircleRadius world) * (degrees - border_angle)/degrees
               littleCircle = littleCircle_ <> semgent_icon
               --littleCircles = zipWith (\(x,y) -> translate x y) (map ithCircleCenter [0..n-1]) (replicate n littleCircle)
               littleCircles = [ let (x,y) = polar2decart (l,realToFrac $ radians *(1/2+ fromIntegral i))
-                                in translate x y $ littleCircle <> (rotate (-90) $ (translate (-25) (-25)) .  Text . name $ (subjects world) !! i)
+                                in translate x y $ littleCircle <> (scale 0.3 0.3 $ rotate (-90) $ (translate (-25) (-25)) .  Text . name $ (subjects world) !! i)
                                 | i <- [0..n-1] ]
               l =  distanceToLittleCircle world
               degrees = 360 /fromIntegral n
@@ -77,7 +82,7 @@ drawSectors world = coloredSectors ++ lines -- ++ squares
                      where i' = fromIntegral i
 
 segments_quantity world = length $ subjects world
-radius world@(World width height _ _) =  ( area / (2*pi*(fromIntegral n+1)) ) ** (1/2)  :: Float
+radius world@(World width height _ _ _) =  ( area / (2*pi*(fromIntegral n+1)) ) ** (1/2)  :: Float
           where
               n = segments_quantity world 
               area = fromIntegral $ width * height :: Float
