@@ -1,4 +1,13 @@
-module GraphicsUtils (drawWorld,World(..),radius) where
+module GraphicsUtils (drawWorld
+                     ,World(..)
+                     ,segments_quantity
+                     ,distanceToLittleCircle
+                     ,littleCircleRadius
+                     ,segmentInDegrees
+                     ,segmentInRadians
+                     ,radius
+                     ,polar2decart
+                     ,decart2polar) where
 import Graphics.Gloss
 import Graphics.Gloss.Data.Vector
 import Graphics.Gloss.Interface.Environment
@@ -75,6 +84,7 @@ radius world@(World width height _ _) =  ( area / (2*pi*(fromIntegral n+1)) ) **
 
 segmentInRadians world = 2*pi / (fromIntegral $ segments_quantity world)
 segmentInDegrees world = 360 / (fromIntegral $ segments_quantity world)
+littleCircleRadius :: World -> Float
 littleCircleRadius world =  l * sin (realToFrac radians/2)
        where l = distanceToLittleCircle world
              radians = segmentInRadians world

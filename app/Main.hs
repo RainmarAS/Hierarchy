@@ -15,11 +15,14 @@ imgsTrans imgs = [translate dx 0 img | (img,dx) <- zip imgs [0,300..9*300]] :: [
 updateWorld :: Event -> World -> World
 --updateWorld (EventKey (MouseButton WheelUp) Down _ _) world = world{segments_quantity = 1 + segments_quantity world }
 --updateWorld (EventKey (MouseButton WheelDown) Down _ _) world = world{segments_quantity = (-1) +  segments_quantity world}
-updateWorld (EventKey (MouseButton LeftButton) Down _ (x,y)) world = if x**2+y**2 < (radius world) ** 2
+updateWorld (EventKey (MouseButton LeftButton) Down _ (x,y)) world = if any_circle_touched x y world
                                                                      then world{subjects = [Subject "a",Subject "b",Subject "c"]} 
                                                                      else world
-
 updateWorld _ world = world
+
+any_circle_touched x y world = x**2+y**2 < (radius world) ** 2 || (any (\(xc,yc) -> (x-xc)**2 + (y-yc)**2 < (littleCircleRadius world)**2) [ polar2decart (distanceToLittleCircle world,fromIntegral i * segmentInRadians world)  | i <- [1..segments_quantity world]])
+                                        
+
 mainCharacter = Subject "Main Character"
 initSubjects =  [Subject "a"
                 ,Subject "b"
