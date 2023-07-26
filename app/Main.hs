@@ -14,22 +14,18 @@ imgsTrans imgs = [translate dx 0 img | (img,dx) <- zip imgs [0,300..9*300]] :: [
 
 
 
-updateWorld :: Event -> World -> World
-updateWorld (EventKey (MouseButton WheelUp) Down _ _) world = world{subjectInCenter = subjects world !! newIndex}
-        where newIndex =( 1 + fromMaybe 0 (findIndex (==subjectInCenter world) $ subjects world) ) `mod` len
-              len = (length $ subjects world) :: Int
-updateWorld (EventKey (MouseButton WheelDown) Down _ _) world = world{subjectInCenter = subjects world !! newIndex}
-        where newIndex =( -1 + fromMaybe 0 (findIndex (==subjectInCenter world) $ subjects world) ) `mod` len
-              len = (length $ subjects world) :: Int
-updateWorld (EventKey (MouseButton LeftButton) Down _ (x,y)) world = if any_circle_touched x y world > 0
-                                                                     then world{main_character = Subject "AHAHAHAHAHAHA"} 
-                                                                     else world
-updateWorld _ world = world
+updateScreenState :: Event -> ScreenState -> ScreenState
+updateScreenState (EventKey (MouseButton WheelUp) Down _ _) screen_state = screen_state{subjectInCenter = subjects screen_state !! newIndex}
+        where newIndex =( 1 + fromMaybe 0 (findIndex (==subjectInCenter screen_state) $ subjects screen_state) ) `mod` len
+              len = (length $ subjects screen_state) :: Int
+updateScreenState (EventKey (MouseButton WheelDown) Down _ _) screen_state = screen_state{subjectInCenter = subjects screen_state !! newIndex}
+        where newIndex =( -1 + fromMaybe 0 (findIndex (==subjectInCenter screen_state) $ subjects screen_state) ) `mod` len
+              len = (length $ subjects screen_state) :: Int
+updateScreenState (EventKey (MouseButton LeftButton) Down _ (x,y)) screen_state = screen_state {subjectInCenter = subj}
+        where subj = subject $ fromMaybe (SubjectButton (subjectInCenter screen_state)) $ clickedObject x y screen_state
+updateScreenState (EventKey (Char 'r') Down _ (x,y)) screen_state = screen_state {subjectInCenter = Subject ""}        
+updateScreenState _ screen_state = screen_state
 
-any_circle_touched x y world = if x**2+y**2 < (radius world) ** 2 then 1 else fromMaybe (-1)
-                                (findIndex (\(xc,yc) -> (x-xc)**2 + (y-yc)**2 < (littleCircleRadius world)**2) 
-                                [ polar2decart (distanceToLittleCircle world,fromIntegral i * segmentInRadians world)  
-                                | i <- [1..segments_quantity world]]  )
                                 
 
 
@@ -42,7 +38,7 @@ main = do
         imgs <- mapM loadBMP paths
         (width, height) <- getScreenSize
         putStrLn $ "width: " ++ (show width) ++ " height: " ++ (show height)
-        play FullScreen (greyN 0.3) 60  (World width height mainCharacter initSubjects mainCharacter) drawWorld updateWorld (\_ -> id)
+        play FullScreen (greyN 0.3) 60  (ScreenState width height mainCharacter initSubjects mainCharacter) drawScreen updateScreenState (\_ -> id)
         --display FullScreen (dark blue) ( coloredDrawing width height  ) 
         --display FullScreen (white) (bitmapOfByteString 100 100 (BitmapFormat TopToBottom PxRGBA) bitmapData True)
         --display FullScreen (white) (pictures $ imgsTrans imgs)
