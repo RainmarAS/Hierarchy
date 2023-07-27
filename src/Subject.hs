@@ -1,3 +1,4 @@
 module Subject (Subject (..)) where
 import Data.Char
-data Subject = Subject { name ::  [Char]} deriving (Eq, Show)
+import Graphics.Gloss
+data Subject = Subject { name ::  [Char] , picture :: Picture} deriving (Eq, Show)

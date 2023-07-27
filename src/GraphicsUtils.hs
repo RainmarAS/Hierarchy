@@ -22,6 +22,8 @@ import Data.ByteString (ByteString, pack)
 
 data ClickableObject = SubjectButton { subject :: Subject}
 
+
+
 clickedObject :: Float -> Float -> ScreenState -> Maybe ClickableObject
 clickedObject x_ y_ screen_state= if index > -1 then Just (SubjectButton ((subjects screen_state) !! ((index +1) `mod` segments_quantity screen_state) )) else Nothing
        where
@@ -34,7 +36,6 @@ clickedObject x_ y_ screen_state= if index > -1 then Just (SubjectButton ((subje
 
 border_angle  = 1/2 :: Float
 arcRadius = 10000 :: Float
-
 
 data ScreenState = ScreenState {width :: Int, height :: Int,  main_character :: Subject , subjects :: [Subject], subjectInCenter :: Subject} deriving (Eq, Show)
 
@@ -58,20 +59,19 @@ focusPoint screen_state = if subj_in_center_idx < 0 then (0,0) else  (x,y) --(x 
               subj_in_center_idx = fromMaybe (-1) (findIndex (==subj_in_center) $ subjects screen_state)
               subj_in_center = subjectInCenter screen_state
 
-
-separateScreen screen_state = rotate (90) $ pics
+separateScreen screen_state = ( rotate (90) $ pics ) <> ( translate (-90) 80 $ scale 0.3 0.3 $ Text "R to Return")
        where 
               n = segments_quantity screen_state
               pics =  pictures $ circles 
               circles =    coloredSectors ++ [centerCircle] 
               coloredSectors  = drawSectors screen_state
               degrees = 360/fromIntegral n
-              centerCircle = let text = scale 0.3 0.3 $ rotate (-90) $ translate (-400) 0 $ Text $ name $ main_character screen_state 
+              centerCircle = let --text = scale 0.3 0.3 $ rotate (-90) $ translate (-400) 0 $ Text $ name $ main_character screen_state 
                                  cCircle = color (greyN 0.2) $ circleSolid (radius screen_state)
-                             in cCircle <> text 
+                                 mainChPic = (scale 0.7 0.7) $ rotate (-90) $ picture $ main_character screen_state
+                             in cCircle <> mainChPic 
               radians = 2*(pi::Double) /  fromIntegral n
               --ithCosSin i = polar2decart (1,i*radians) --(realToFrac $ cos $ radians * fromIntegral i,realToFrac $ sin $ radians * fromIntegral i) 
-
 
 drawSectors screen_state =  coloredSectors ++ lines ++ squares
        where  
@@ -91,27 +91,29 @@ drawSectors screen_state =  coloredSectors ++ lines ++ squares
               littleCircle = littleCircle_ <> semgent_icon
               --littleCircles = zipWith (\(x,y) -> translate x y) (map ithCircleCenter [0..n-1]) (replicate n littleCircle)
               littleCircles = [ let (x,y) = polar2decart (l,realToFrac $ radians *(1/2+ fromIntegral i))
-                                in translate x y $ littleCircle <> (scale 0.3 0.3 $ rotate (-90) $ (translate (-25) (-25)) .  Text . name $ (subjects screen_state) !! i)
-                                | i <- [0..n-1] ]
+                                    txt =  (scale 0.3 0.3 $ rotate (-90) $ (translate (-25) (-25)) .  Text . name $ (subjects screen_state) !! i)
+                                    subjPic = scale 0.5 0.5 $ rotate (-90) $ picture $ (subjects screen_state) !! i 
+                                   in translate x y $ littleCircle <> subjPic
+                                   | i <- [0..n-1] ]
               l =  distanceToLittleCircle screen_state
               degrees = 360 /fromIntegral n
               thickArcs = map ithThickArc [0..n-1]
               ithThickArc i = thickArc (degrees * i'+border_angle/2) (degrees*(i'+1)-border_angle/2) arcRadius (arcThickness screen_state)
                      where i' = fromIntegral i
 
-segments_quantity screen_state = length $ subjects screen_state
-radius screen_state@(ScreenState width height _ _ _) =  ( area / (2*pi*(fromIntegral n+1)) ) ** (1/2)  :: Float
+radius screen_state@(ScreenState width height _ _ _) = 1.5 * ( area / (2*pi*(fromIntegral n+1)) ) ** (1/2)  :: Float
           where
               n = segments_quantity screen_state 
               area = fromIntegral $ width * height :: Float
 
+segments_quantity screen_state = length $ subjects screen_state
 segmentInRadians screen_state = 2*pi / (fromIntegral $ segments_quantity screen_state)
 segmentInDegrees screen_state = 360 / (fromIntegral $ segments_quantity screen_state)
+
 littleCircleRadius :: ScreenState -> Float
 littleCircleRadius screen_state =  l * sin (realToFrac radians/2)
        where l = distanceToLittleCircle screen_state
              radians = segmentInRadians screen_state
-
 
 distanceToLittleCircle :: ScreenState -> Float
 distanceToLittleCircle screen_state =  (radius screen_state) / (1 - sin (realToFrac radians/2 ))

@@ -23,26 +23,29 @@ updateScreenState (EventKey (MouseButton WheelDown) Down _ _) screen_state = scr
               len = (length $ subjects screen_state) :: Int
 updateScreenState (EventKey (MouseButton LeftButton) Down _ (x,y)) screen_state = screen_state {subjectInCenter = subj}
         where subj = subject $ fromMaybe (SubjectButton (subjectInCenter screen_state)) $ clickedObject x y screen_state
-updateScreenState (EventKey (Char 'r') Down _ (x,y)) screen_state = screen_state {subjectInCenter = Subject ""}        
+updateScreenState (EventKey (Char 'r') Down _ (x,y)) screen_state = screen_state {subjectInCenter = Subject "" Blank}        
 updateScreenState _ screen_state = screen_state
 
                                 
 
 
-mainCharacter = Subject "Main Character"
-initSubjects = take 26 $ cycle $ map (\s -> Subject [s]) ['a','b'..'z'] :: [Subject]
+
+--initSubjects = take 7 $ cycle $ map (\s -> Subject [s] Blank) ['a','b'..'z'] :: [Subject]
 --colors = map (dark)  [red,green,rose, yellow, chartreuse, rose,  chartreuse, aquamarine, azure, violet]
 bitmapData = pack $ take 40000 (cycle [200,10,10,55])
 main :: IO ()
 main = do 
         imgs <- mapM loadBMP paths
+        
         (width, height) <- getScreenSize
         putStrLn $ "width: " ++ (show width) ++ " height: " ++ (show height)
-        play FullScreen (greyN 0.3) 60  (ScreenState width height mainCharacter initSubjects mainCharacter) drawScreen updateScreenState (\_ -> id)
+        play FullScreen (greyN 0.3) 60  (ScreenState width height (mainCharacter (imgs !! 0) ) (initSubjects $ tail imgs) (mainCharacter (imgs !! 0))) drawScreen updateScreenState (\_ -> id)
         --display FullScreen (dark blue) ( coloredDrawing width height  ) 
         --display FullScreen (white) (bitmapOfByteString 100 100 (BitmapFormat TopToBottom PxRGBA) bitmapData True)
         --display FullScreen (white) (pictures $ imgsTrans imgs)
-
+        where
+                initSubjects imgs = take 8 $  cycle $ zipWith (\s img -> Subject [s] img) ['a','b'..'z'] imgs :: [Subject]
+                mainCharacter img = Subject "Main Character" img
 {- for prototype with faces
                                         ( scale 0.7 0.7 $ imgs!!0)   <>
                                         ( translate 500 150 $ scale 0.7 0.7 $ imgs!!1) <>
