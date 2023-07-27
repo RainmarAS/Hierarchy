@@ -45,13 +45,6 @@ main = do
         --display FullScreen (white) (bitmapOfByteString 100 100 (BitmapFormat TopToBottom PxRGBA) bitmapData True)
         --display FullScreen (white) (pictures $ imgsTrans imgs)
         where
-                initSubjects imgs = take 8 $  cycle $ zipWith (\s img -> Subject s img) combinations (cycle imgs) :: [Subject]
-                combinations = [ [a,b,c] | a <- ['a'..'z'], b <- ['a'..'z'], c <- ['a'..'z']]
+                initSubjects imgs = take 7 $  cycle $ zipWith (\s img -> Subject s img) combinations (cycle imgs) :: [Subject]
+                combinations = [ [c,b,a] | a <- ['a'..'z'], b <- ['a'..'z'], c <- ['a'..'z']]
                 mainCharacter img = Subject "Main Character" img
-{- for prototype with faces
-                                        ( scale 0.7 0.7 $ imgs!!0)   <>
-                                        ( translate 500 150 $ scale 0.7 0.7 $ imgs!!1) <>
-                                        ( translate (-500) 150 $ scale 0.7 0.7 $ imgs!!2) <>
-                                        ( translate 0 (350) $ scale 0.7 0.7 $ imgs!!3 ) <>
-                                        ( translate 400 (-250) $ scale 0.7 0.7 $ imgs!!4 ) <>
-                                        ( translate (-400) (-250) $ scale 0.7 0.7 $ imgs!!5 )-} 
