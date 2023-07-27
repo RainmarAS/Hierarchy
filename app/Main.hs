@@ -21,7 +21,9 @@ updateScreenState (EventKey (MouseButton WheelUp) Down _ _) screen_state = scree
 updateScreenState (EventKey (MouseButton WheelDown) Down _ _) screen_state = screen_state{subjectInCenter = subjects screen_state !! newIndex}
         where newIndex =( -1 + fromMaybe 0 (findIndex (==subjectInCenter screen_state) $ subjects screen_state) ) `mod` len
               len = (length $ subjects screen_state) :: Int
-updateScreenState (EventKey (MouseButton LeftButton) Down _ (x,y)) screen_state = screen_state {subjectInCenter = subj}
+--updateScreenState (EventKey (MouseButton LeftButton) Down _ (x,y)) screen_state = screen_state {subjectInCenter = subj}
+--        where subj = subject $ fromMaybe (SubjectButton (subjectInCenter screen_state)) $ clickedObject x y screen_state
+updateScreenState (EventMotion (x,y)) screen_state = screen_state {subjectInCenter = subj}
         where subj = subject $ fromMaybe (SubjectButton (subjectInCenter screen_state)) $ clickedObject x y screen_state
 updateScreenState (EventKey (Char 'r') Down _ (x,y)) screen_state = screen_state {subjectInCenter = Subject "" Blank}        
 updateScreenState _ screen_state = screen_state
@@ -36,7 +38,6 @@ bitmapData = pack $ take 40000 (cycle [200,10,10,55])
 main :: IO ()
 main = do 
         imgs <- mapM loadBMP paths
-        
         (width, height) <- getScreenSize
         putStrLn $ "width: " ++ (show width) ++ " height: " ++ (show height)
         play FullScreen (greyN 0.3) 60  (ScreenState width height (mainCharacter (imgs !! 0) ) (initSubjects $ tail imgs) (mainCharacter (imgs !! 0))) drawScreen updateScreenState (\_ -> id)
@@ -44,7 +45,8 @@ main = do
         --display FullScreen (white) (bitmapOfByteString 100 100 (BitmapFormat TopToBottom PxRGBA) bitmapData True)
         --display FullScreen (white) (pictures $ imgsTrans imgs)
         where
-                initSubjects imgs = take 8 $  cycle $ zipWith (\s img -> Subject [s] img) ['a','b'..'z'] imgs :: [Subject]
+                initSubjects imgs = take 8 $  cycle $ zipWith (\s img -> Subject s img) combinations (cycle imgs) :: [Subject]
+                combinations = [ [a,b,c] | a <- ['a'..'z'], b <- ['a'..'z'], c <- ['a'..'z']]
                 mainCharacter img = Subject "Main Character" img
 {- for prototype with faces
                                         ( scale 0.7 0.7 $ imgs!!0)   <>
