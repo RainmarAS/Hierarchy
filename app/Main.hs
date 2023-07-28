@@ -25,7 +25,9 @@ updateScreenState (EventKey (MouseButton WheelDown) Down _ _) screen_state = scr
 --        where subj = subject $ fromMaybe (SubjectButton (subjectInCenter screen_state)) $ clickedObject x y screen_state
 updateScreenState (EventMotion (x,y)) screen_state = screen_state {subjectInCenter = subj}
         where subj = subject $ fromMaybe (SubjectButton (subjectInCenter screen_state)) $ clickedObject x y screen_state
-updateScreenState (EventKey (Char 'r') Down _ (x,y)) screen_state = screen_state {subjectInCenter = Subject "" Blank}        
+updateScreenState (EventKey (Char 't') Down _ _) screen_state = screen_state {subjectInCenter = Subject "" Blank, focusTarget = SubjectInCenter}
+updateScreenState (EventKey (Char 'e') Down _ _) screen_state = screen_state {focusTarget = SubjectsAround}
+updateScreenState (EventKey (Char 'r') Down _ _) screen_state = screen_state {focusTarget = Balanced}
 updateScreenState _ screen_state = screen_state
 
                                 
@@ -40,7 +42,7 @@ main = do
         imgs <- mapM loadBMP paths
         (width, height) <- getScreenSize
         putStrLn $ "width: " ++ (show width) ++ " height: " ++ (show height)
-        play FullScreen (greyN 0.3) 60  (ScreenState width height (mainCharacter (imgs !! 0) ) (initSubjects $ tail imgs) (mainCharacter (imgs !! 0))) drawScreen updateScreenState (\_ -> id)
+        play FullScreen (greyN 0.3) 60  (ScreenState width height (mainCharacter (imgs !! 0) ) (initSubjects $ tail imgs) (mainCharacter (imgs !! 0)) SubjectInCenter) drawScreen updateScreenState (\_ -> id)
         --display FullScreen (dark blue) ( coloredDrawing width height  ) 
         --display FullScreen (white) (bitmapOfByteString 100 100 (BitmapFormat TopToBottom PxRGBA) bitmapData True)
         --display FullScreen (white) (pictures $ imgsTrans imgs)

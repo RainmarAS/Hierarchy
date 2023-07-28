@@ -1,5 +1,6 @@
 module GraphicsUtils (drawScreen
                      ,ScreenState(..)
+                     ,FocusTarget(..)
                      ,segments_quantity
                      ,distanceToLittleCircle
                      ,littleCircleRadius
@@ -39,16 +40,18 @@ clickedObject x_ y_ screen_state= fmap (\s -> SubjectButton s) subj
 border_angle  = 1/2 :: Float
 arcRadius = 10000 :: Float
 
-data ScreenState = ScreenState {width :: Int, height :: Int,  main_character :: Subject , subjects :: [Subject], subjectInCenter :: Subject} deriving (Eq, Show)
+data FocusTarget = SubjectInCenter | SubjectsAround | Balanced deriving (Eq, Show)
+
+data ScreenState = ScreenState {width :: Int, height :: Int, main_character :: Subject , subjects :: [Subject], subjectInCenter :: Subject, focusTarget :: FocusTarget } deriving (Eq, Show)
 
 scaleX :: ScreenState -> Float
-scaleX screen_state =  1.2 * (fromIntegral (width screen_state) / fromIntegral (height screen_state)) ** (1/2)
-scaleY screen_state =  1.2 * (fromIntegral (height screen_state) / fromIntegral (width screen_state) ) ** (1/2)
+scaleX screen_state =  (fromIntegral (width screen_state) / fromIntegral (height screen_state)) ** (1/2)
+scaleY screen_state =  (fromIntegral (height screen_state) / fromIntegral (width screen_state) ) ** (1/2)
 
 colors = map (dark) $  cycle [greyN 0.3]--,red,green,rose, yellow,chartreuse, rose,  chartreuse, aquamarine, azure, violet]
 
 drawScreen :: ScreenState-> Picture
-drawScreen  screen_state@(ScreenState width height  _ _ subj_in_center) = scale (scaleX screen_state) (scaleY screen_state) $ translate (-1*x) (-1*y)$ separateScreen screen_state -- 
+drawScreen  screen_state@(ScreenState width height  _ _ subj_in_center _) = scale (scaleX screen_state) (scaleY screen_state) $ translate (-1*x) (-1*y)$ separateScreen screen_state -- 
        where 
               (x,y) = focusPoint screen_state
               n = segments_quantity screen_state
@@ -69,7 +72,7 @@ separateScreen screen_state = rotate (90) $ pictures $ sectors
 
               
               --ithCosSin i = polar2decart (1,i*radians) --(realToFrac $ cos $ radians * fromIntegral i,realToFrac $ sin $ radians * fromIntegral i) 
-drawCenterCircle screen_state = arcSolOrange <> arcSol <> triangle <> border <>  (getMainChPic screen_state) <> fstrectangle <> sndrectangle --text = scale 0.3 0.3 $ rotate (-90) $ translate (-400) 0 $ Text $ name $ main_character screen_state 
+drawCenterCircle screen_state = arcSolOrange <> arcSol <> triangle <> border <> (getMainChPic screen_state)  <> fstrectangle <> sndrectangle --text = scale 0.3 0.3 $ rotate (-90) $ translate (-400) 0 $ Text $ name $ main_character screen_state 
               where            
                      r = centerCircleRadius screen_state
                      border = color (greyN 0.1) $ thickCircle (r-3) 6
@@ -77,16 +80,16 @@ drawCenterCircle screen_state = arcSolOrange <> arcSol <> triangle <> border <> 
                      arcSolOrange = (color orange) $ circleSolid r
                      triangle = color orange $ polygon [(0,0) , (r*cos angle,-r* sin angle),(-r* cos angle,-r* sin angle)]
                      (x,y) = polar2decart (2*r/(-3), 3*pi/8)
-                     getMainChPic = (translate x y ).(scale 0.5 0.5) . (rotate (-90)) . picture . main_character
+                     getMainChPic = (translate x y ). (scale (r*0.001) (r*0.001))  . (rotate (-90)) . picture . main_character
                      angle = pi/12
                      fstrectangle = (color$  greyN 0.1) $ translate 0 (-r*(1+sin angle)/2) $ rectangleSolid 25 (r*(1 - sin angle))
                      sndrectangle = (color$  greyN 0.1) $ translate 0 (-r*(sin angle)) $ rectangleSolid (2*(cos angle)*centerCircleRadius screen_state) 15
 
-drawSectors screen_state =  coloredSectors ++ lines ++ squares
+drawSectors screen_state =  coloredSectors ++ lines -- ++ squares
        where  
               n = segments_quantity screen_state
               lines = let fstpoint i =  polar2decart (l + littleCircleRadius screen_state,realToFrac $ radians *(1/2+ fromIntegral i))
-                      in [color white $ line [fstpoint i,mulSV 1000 $ fstpoint i] | i<- [0..n-1]]
+                      in [color white $ line [fstpoint i,mulSV 3 $ fstpoint i] | i<- [0..n-1]]
               squares = concat [[  let (x,y) = polar2decart (l*(1.4 + (j/2)**2),realToFrac $ radians *(1/2+ fromIntegral i))
                                        trans = (color orange) . (translate x y) . rotate(-90) . (scale 0.3 0.3) . Text $ "Info"  -- 
                                        unitOrangeSquare =  ( color (dark orange)$ rectangleSolid 1 1) <> ( color orange $ scale 0.9 0.9 $ rectangleSolid 1 1)
@@ -94,8 +97,9 @@ drawSectors screen_state =  coloredSectors ++ lines ++ squares
                                    in  square
                                    | i <- [0..n-1] ]
                                    | j<-[3] ]
-              coloredSectors  =   zipWith (color) colors sectors
-              sectors = zipWith (<>) thickArcs (sectorCircles screen_state) 
+              coloredSectors  =  zipWith (color) colors  backgroundSectors
+              backgroundSectors = zipWith (<>) backgroundSectors_ (sectorContentCircles screen_state)  
+              backgroundSectors_ = zipWith (<>) (sectorBackgroundCircles screen_state)  thickArcs
               radians = segmentInRadians screen_state -- 2*(pi::Double) /  fromIntegral n
               l =  distanceToLittleCircle screen_state
               degrees = 360 /fromIntegral n
@@ -103,18 +107,39 @@ drawSectors screen_state =  coloredSectors ++ lines ++ squares
               ithThickArc i = thickArc (degrees * i'+border_angle/2) (degrees*(i'+1)-border_angle/2) arcRadius (arcThickness screen_state)
                      where i' = fromIntegral i
 
-sectorCircles screen_state = [ let (x,y) = polar2decart (l,realToFrac $ radians *(1/2+ fromIntegral i))
-                                   scalar =  0.0015 * littleCircleRadius screen_state
-                                   scalseS = scale scalar scalar
-                                   txt = color red $ (  rotate (-90) $ (translate (-30) (-0.7*littleCircleRadius screen_state)) . scalseS.  Text . name $ (subjects screen_state) !! i)
-                                   subjPic = scalseS . rotate (-90) $ picture $ (subjects screen_state) !! i 
-                               in translate x y $ littleCircle <> subjPic <> txt
-                               | i <- [0..n-1] ]
+sectorBackgroundCircles screen_state = [ let (x,y) = polar2decart (l,realToFrac $ radians *(1/2+ fromIntegral i))
+                                         in translate x y $ littleCircle
+                                          | i <- [0..n-1] ]
        where
-              contentCircle = color (dark . dark $ green) $ circleSolid $ 0.9 * (littleCircleRadius screen_state)
-              characterLittleCircle = color red $ circleSolid $ (min 0.9 $ (fromIntegral n)/25)*(littleCircleRadius screen_state)
+              contentCircle = if focusTarget screen_state == SubjectInCenter
+                              then color (dark . dark $ green) $ circleSolid $ 0.9 * (littleCircleRadius screen_state)
+                              else Blank
               backgroundCircle = circleSolid $ (littleCircleRadius screen_state) * (degrees - border_angle)/degrees
-              littleCircle = backgroundCircle <> contentCircle <> characterLittleCircle
+              littleCircle = backgroundCircle <> contentCircle -- <> characterLittleCircle
+              l =  distanceToLittleCircle screen_state
+              n = segments_quantity screen_state
+              degrees = 360 /fromIntegral n
+              radians = segmentInRadians screen_state
+
+sectorContentCircles screen_state = [ let (x,y) = ithCircleCoordinates i
+                                          r = littleCircleRadius screen_state
+                                          scalar =  0.0015 * r
+                                          scalseS = scale scalar scalar
+                                          txt = color white $ (  rotate (-90) $ (translate (-0.15*r) (-0.4*r)) . scalseS.  Text . name $ (subjects screen_state) !! i)
+                                          subjPic = scalseS . rotate (-90) $ picture $ (subjects screen_state) !! i 
+                                          in translate x y $ littleCircle <> subjPic <> txt
+                                          | i <- [0..n-1] ]
+       where
+              contentCircle = if focusTarget screen_state `elem` [SubjectsAround,Balanced] 
+                              then color (dark . dark $ green) $ circleSolid $ 0.9 * (littleCircleRadius screen_state)
+                              else Blank
+              characterLittleCircle = color red $ circleSolid $ (min 0.9 $ (fromIntegral n)/25)*(littleCircleRadius screen_state)
+              littleCircle = contentCircle <> characterLittleCircle
+              ithCircleCoordinates i = case focusTarget screen_state of
+                     SubjectInCenter -> polar2decart (l,realToFrac $ radians *(1/2+ fromIntegral i))
+                     Balanced -> polar2decart (l,realToFrac $ radians *(1/2+ fromIntegral i))
+                     SubjectsAround -> polar2decart (4*l,realToFrac $ radians *(1/2+ fromIntegral i))
+
               l =  distanceToLittleCircle screen_state
               n = segments_quantity screen_state
               degrees = 360 /fromIntegral n
@@ -122,8 +147,12 @@ sectorCircles screen_state = [ let (x,y) = polar2decart (l,realToFrac $ radians 
 
 
 centerCircleRadius :: ScreenState -> Float
-centerCircleRadius screen_state@(ScreenState width height _ _ _) = 1.8 * ( area / (2*pi*(fromIntegral n+1)) ) ** (1/2)  :: Float
+centerCircleRadius screen_state@(ScreenState width height _ _ _ focTar) = focusScalar * ( area / (2*pi*(fromIntegral n+1)) ) ** (1/2)  :: Float
           where
+              focusScalar = case focTar of 
+                     SubjectInCenter -> 1.8
+                     SubjectsAround -> 1/2
+                     Balanced -> 1                 
               n = segments_quantity screen_state 
               area = fromIntegral $ width * height :: Float
 
